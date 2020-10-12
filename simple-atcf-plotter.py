@@ -1,4 +1,5 @@
-# A simple script to plot storm tracks
+# A simple script to plot storm track data from ATCF
+# Author: Imran Mahmood
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -14,12 +15,9 @@ ax = plt.axes(projection=ccrs.PlateCarree())
 
 plt.title('October 2020  NW Pacific Invest and Tropical Cyclone Tracks')
 ax.set_extent([98.0, 150.0, 0.0, 35.0], ccrs.PlateCarree())
-#ax.coastlines(resolution='10m')
-# Put a background image on for nice sea rendering.
-#ax.stock_img()
+ax.coastlines(resolution='50m')
 
 ax.add_feature(cfeature.LAND)
-ax.add_feature(cfeature.COASTLINE)
 ax.add_feature(cfeature.BORDERS)
 
 gl = ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle=':')
@@ -30,7 +28,7 @@ gl.right_labels = False
 x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
 y_values = [25.0, 25.0, 5.0, 5.0, 15.0, 21.0, 25.0]
 plt.plot(x_values, y_values, linewidth=1)
-plt.text(120.0, 4.5, 'PHL Area of Responsibility', fontsize=8);
+plt.text(120.0, 4.5, 'PHL Area of Responsibility', fontsize=8)
 
 markersize=3
 lpacol='gray'
@@ -49,27 +47,36 @@ textstr = '\n'.join((
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
 # place a text box in upper left in axes coords
-ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=10,
         verticalalignment='top', bbox=props)
+		
 
-#16W Chan-hom
-plt.text(142.8, 19.3, ' Chan-hom', fontsize=10, transform=ccrs.Geodetic());
-plt.plot(142.8, 19.3,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(142.3, 19.6,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(141.8, 20.0,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(141.4, 20.3,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(141.0, 20.7,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(140.5, 20.9,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(140.1, 21.6,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(139.9, 22.0,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(139.8, 22.1,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(139.6, 22.2,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(139.5, 22.2,  markersize=markersize, marker='o', color=lpacol, transform=ccrs.Geodetic())
-plt.plot(139.3, 22.3,  markersize=markersize, marker='o', color=tdcol, transform=ccrs.Geodetic())
-plt.plot(139.2, 22.4,  markersize=markersize, marker='o', color=tscol, transform=ccrs.Geodetic())
-plt.plot(139.3, 22.6,  markersize=markersize, marker='o', color=tscol, transform=ccrs.Geodetic())
-plt.plot(139.4, 23.2,  markersize=markersize, marker='o', color=tscol, transform=ccrs.Geodetic())
-#--active
+with open('data/trackfile-16W.txt', 'r') as f:
+    lat = []
+    lon = []
+    wnd = []
+    for line in f:
+        if not line.strip() or line.startswith('@') or line.startswith('#'): 
+            continue
+        row = line.split()
+        lat.append(float(row[5][:-1])) # remove last character from coords and add to list
+        lon.append(float(row[4][:-1]))
+        wnd.append(float(row[7]))
+		
+        col = []
+  
+        for i in range(0, len(wnd)): 
+            if wnd[i] < 25: 
+                col.append(lpacol)   
+            elif wnd[i] in range(25, 35): 
+                col.append(tdcol)
+            elif wnd[i] in range(35, 65):
+                col.append(tscol)
+            else:
+                col.append(tycol)
+				
+        for i in range(len(wnd)):
+            plt.plot(lat[i], lon[i],  markersize=markersize, marker='o', color=col[i], transform=ccrs.Geodetic())
 
 #91W
 plt.text(112.5, 12.3, ' 91W', fontsize=10, transform=ccrs.Geodetic());
