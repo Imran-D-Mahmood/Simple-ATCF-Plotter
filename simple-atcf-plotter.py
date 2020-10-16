@@ -10,72 +10,97 @@ from cartopy.io.shapereader import Reader
 from cartopy.feature import ShapelyFeature
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+from matplotlib.font_manager import FontProperties
 
-plt.rcParams['axes.facecolor'] = '#0e1111'
+#plt.rcParams['axes.facecolor'] = '#0e1111'
+print('a.)NW Pacific \nb.)N Indian Ocean')
+basin = input('Select a basin: ')
 
-fig = plt.figure(figsize=(8,8)) #WxH 800x800
+if basin == 'A' or basin == 'a':
+    limits = [98.0, 152.0, -0.5, 46.0] # minlon, maxlon, minlat, maxlat
+elif basin == 'B' or basin == 'b':
+    limits = [38.0, 102.0, -0.5, 32.0]
+	
+fig = plt.figure(figsize=(12.80,7.20)) #WxH 1280x720
+#fig,ax = plt.subplots()
 
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-plt.title('')
-ax.set_extent([98.0, 150.0, -2.0, 37.0], ccrs.PlateCarree())
+plt.title('Title')
 
-ax.add_feature(cfeature.LAND)
-#ax.add_feature(cfeature.COASTLINE)
-ax.add_feature(cfeature.BORDERS)
-ax.add_feature(cfeature.RIVERS)
-ax.add_feature(cfeature.LAKES)
-#ax.add_feature(cfeature.OCEAN)
 
-gl = ax.gridlines(draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle=':')
+ax.set_extent(limits)
+
+resol = '10m'
+land = cfeature.NaturalEarthFeature('physical', 'land', \
+    scale=resol, edgecolor='darkgreen', facecolor=cfeature.COLORS['land'])
+ocean = cfeature.NaturalEarthFeature('physical', 'ocean', \
+    scale=resol, edgecolor='none', facecolor='lightseagreen')
+lakes = cfeature.NaturalEarthFeature('physical', 'lakes', \
+    scale=resol, edgecolor=cfeature.COLORS['water'], facecolor=cfeature.COLORS['water'])
+rivers = cfeature.NaturalEarthFeature('physical', 'rivers_lake_centerlines', \
+    scale=resol, edgecolor=cfeature.COLORS['water'], facecolor='none')
+
+ax.add_feature(land, facecolor='forestgreen', lw=0.5, zorder=0)
+ax.add_feature(ocean, zorder=-1)
+ax.add_feature(lakes)
+ax.add_feature(rivers, lw=0.5)
+ax.add_feature(cfeature.BORDERS, color='darkgreen', lw=0.8)
+
+gl = ax.gridlines(draw_labels=True, lw=1, color='gray', alpha=0.5, linestyle=':')
 gl.top_labels = False
 gl.right_labels = False
 
 # Draw PAR line
-x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
-y_values = [25.0, 25.0, 5.0, 5.0, 15.0, 21.0, 25.0]
-plt.plot(x_values, y_values, linewidth=1)
-plt.text(125.0, 4.0, 'PHL Area of Responsibility', fontsize=8, color='skyblue')
+if basin == 'A' or basin == 'a':
+	x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
+	y_values = [25.0, 25.0, 5.0, 5.0, 15.0, 21.0, 25.0]
+	plt.plot(x_values, y_values, lw=0.8, zorder=1, color='red')
+	plt.text(125.0, 4.0, 'PHL Area of Responsibility', fontsize=8, color='red')
 
-markersize=15
-lpamarker='^'
+markersize=25
 marker='o'
 lpacol='gray'
-tdcol='blue'
-tscol='green'
-ty1col='#CCCC00'
-ty2col='#999900'
-ty3col='darkorange'
+tdcol='deepskyblue'
+tscol='royalblue'
+ty1col='khaki'
+ty2col='yellow'
+ty3col='orange'
 ty4col='orangered'
-ty5col='red'
+ty5col='darkred'
+ptoutl='lightgray'
+
+fontP = FontProperties()
+fontP.set_size('small')
 
 # Plot legends
-lpa = mlines.Line2D([], [], color=lpacol, marker=marker, linestyle='None',
-                          markersize=10, label='Invest / LPA')
-td = mlines.Line2D([], [], color=tdcol, marker=marker, linestyle='None',
-                          markersize=10, label='Tropical Depression')
-ts = mlines.Line2D([], [], color=tscol, marker=marker, linestyle='None',
-                          markersize=10, label='Tropical Storm')
-ty1 = mlines.Line2D([], [], color=ty1col, marker=marker, linestyle='None',
+lpa = mlines.Line2D([], [], color=lpacol, markeredgecolor=ptoutl, marker=marker, linestyle='None',
+                          markersize=10, label='Invest / Low Pressure Area')
+td = mlines.Line2D([], [], color=tdcol, markeredgecolor=ptoutl, marker=marker, linestyle='None',
+                          markersize=10, label='(Sub)Tropical Depression')
+ts = mlines.Line2D([], [], color=tscol, markeredgecolor=ptoutl, marker=marker, linestyle='None',
+                          markersize=10, label='(Sub)Tropical Storm')
+#ty = mlines.Line2D(label='Typhoon:')
+ty1 = mlines.Line2D([], [], color=ty1col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 1 Typhoon')
-ty2 = mlines.Line2D([], [], color=ty2col, marker=marker, linestyle='None',
+ty2 = mlines.Line2D([], [], color=ty2col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 2 Typhoon')
-ty3 = mlines.Line2D([], [], color=ty3col, marker=marker, linestyle='None',
+ty3 = mlines.Line2D([], [], color=ty3col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 3 Typhoon')
-ty4 = mlines.Line2D([], [], color=ty4col, marker=marker, linestyle='None',
+ty4 = mlines.Line2D([], [], color=ty4col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 4 Typhoon / SuperTyphoon')
-ty5 = mlines.Line2D([], [], color=ty5col, marker=marker, linestyle='None',
+ty5 = mlines.Line2D([], [], color=ty5col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 5 SuperTyphoon')
                           
-                          
-plt.legend(handles=[lpa, td, ts, ty1, ty2, ty3, ty4, ty5], fontsize=10, facecolor='wheat', loc='best')
+plt.legend(handles=[lpa, td, ts, ty1, ty2, ty3, ty4, ty5], facecolor='burlywood', loc='upper left', prop=fontP)
 
-filelist=['data/trackfile-16W.txt', 'data/trackfile-18W.txt']
+filenames=['data/trackfile-16W.txt', 'data/trackfile-18W.txt']
 
-
+#with ExitStack() as stack:
+#    files = [stack.enter_context(open(fname)) for fname in filenames]
 with open('data/trackfile-16W.txt') as f:
     # List to store selected columns from txt file:
-    id = [] # TC designation
+    id = [] # system designation
     lat = [] # latitude
     lon = [] # longitude
     wnd = [] # winds in knots
@@ -116,16 +141,18 @@ with open('data/trackfile-16W.txt') as f:
         
     # Create the colors list using the function above
     cols=pltcolor(wnd)
-	
-    plt.scatter(lat, lon, c=cols, s=markersize, transform=ccrs.PlateCarree(), zorder=2)
     
-	# Connect points with same TC id only
+    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=2)
+    
+    # Connect points with same TC id only
     uid = np.array(id)
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lat)[idx],np.array(lon)[idx], color='red', linewidth=0.5, zorder=1)
-
-plt.figtext(0.99, 0.01, 'Track and intensity data from JTWC | Plotted by Imran Mahmood', fontsize=8, horizontalalignment='right')
-plt.tight_layout()
+            plt.plot(np.array(lat)[idx],np.array(lon)[idx], antialiased=True, snap=True, lw=0.5, color='black', zorder=1)
+            #ln.set_antialiased(True)
+plt.figtext(0.99, 0.01, 'Track and intensity data from JTWC', fontsize=8, horizontalalignment='right')
+plt.tight_layout(rect=[2, 0.05, 0, 0])
+#plt.tight_layout()
 plt.show()
+#fig.savefig('myimage.png', format='png', dpi=1200)
