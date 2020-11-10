@@ -13,30 +13,6 @@ import matplotlib.lines as mlines
 from matplotlib.font_manager import FontProperties
 from matplotlib.collections import LineCollection
 
-plt.rcParams["figure.facecolor"] = 'whitesmoke'
-fig = plt.figure(figsize=(10, 7), constrained_layout=True) #WxH 1280x720
-
-ax = plt.axes(projection=ccrs.PlateCarree())
-
-resol = '10m'
-land = cfeature.NaturalEarthFeature('physical', 'land', \
-    scale=resol, edgecolor='darkgreen', facecolor=cfeature.COLORS['land'])
-ocean = cfeature.NaturalEarthFeature('physical', 'ocean', \
-    scale=resol, edgecolor='none', facecolor='powderblue')
-lakes = cfeature.NaturalEarthFeature('physical', 'lakes', \
-    scale=resol, edgecolor=cfeature.COLORS['water'], facecolor=cfeature.COLORS['water'])
-rivers = cfeature.NaturalEarthFeature('physical', 'rivers_lake_centerlines', \
-    scale=resol, edgecolor=cfeature.COLORS['water'], facecolor='none')
-
-ax.add_feature(land, facecolor='forestgreen', lw=0.5, zorder=0)
-ax.add_feature(ocean, zorder=-1)
-ax.add_feature(lakes)
-ax.add_feature(rivers, lw=0.5)
-ax.add_feature(cfeature.BORDERS, color='darkgreen', lw=0.8)
-
-gl = ax.gridlines(draw_labels=True, lw=1, color='gray', alpha=0.5, linestyle=':')
-gl.top_labels = False
-gl.right_labels = False
 
 markersize=28
 marker='o'
@@ -50,6 +26,7 @@ ty4col='orangered'
 ty5col='deeppink'
 ptoutl='black'
 
+
 def show_selection():
     print('a)NW Pacific \nb)NW Pacific (PAR) \nc)N Indian Ocean \nd)Single Storm Plot')
     basin = input('Select area: ')
@@ -62,6 +39,35 @@ def show_selection():
         plot_nio()
     elif basin  == 'D' or basin == 'd':
         plot_single()
+        
+
+def create_map(coordlist):
+    plt.rcParams["figure.facecolor"] = 'whitesmoke'
+    fig = plt.figure(figsize=(11, 6.5), constrained_layout=True) #WxH 1100x650
+    
+    global ax
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.set_extent(coordlist)
+
+    resol = '10m'
+    land = cfeature.NaturalEarthFeature('physical', 'land', \
+        scale=resol, edgecolor='darkgreen', facecolor=cfeature.COLORS['land'])
+    ocean = cfeature.NaturalEarthFeature('physical', 'ocean', \
+        scale=resol, edgecolor='none', facecolor='powderblue')
+    lakes = cfeature.NaturalEarthFeature('physical', 'lakes', \
+        scale=resol, edgecolor=cfeature.COLORS['water'], facecolor=cfeature.COLORS['water'])
+    rivers = cfeature.NaturalEarthFeature('physical', 'rivers_lake_centerlines', \
+        scale=resol, edgecolor=cfeature.COLORS['water'], facecolor='none')
+
+    ax.add_feature(land, facecolor='olivedrab', lw=0.5, zorder=0)
+    ax.add_feature(ocean, zorder=-1)
+    ax.add_feature(lakes)
+    ax.add_feature(rivers, lw=0.5)
+    ax.add_feature(cfeature.BORDERS, color='darkgreen', lw=0.8)
+
+    gl = ax.gridlines(draw_labels=True, lw=1, color='gray', alpha=0.5, linestyle=':')
+    gl.top_labels = False
+    gl.right_labels = False
         
     
 def read_atcf_file(fileloc):
@@ -78,10 +84,11 @@ def read_atcf_file(fileloc):
         global lat
         global lon
         global wnd
+        global indvSystems
         id = [] # system designation
         name = [] # system name
-        date = []
-        time = []
+        date = [] # date UTC
+        time = [] # time UTC
         lat = [] # latitude
         lon = [] # longitude
         wnd = [] # winds in knots
@@ -90,13 +97,18 @@ def read_atcf_file(fileloc):
             if not line.strip() or line.startswith('@') or line.startswith('#'): 
                 continue
             row = line.split()
-            id.append((row[0]))
+            id.append(str(row[0]))
             name.append(str(row[1]))
             date.append(str(row[2]))
             time.append(str(row[3]))
             lat.append(float(row[5][:-1])) # remove last character from coords and add to list
             lon.append(float(row[4][:-1]))
             wnd.append(int(row[7]))
+
+        id2 = [item + ' ' for item in id]
+        cmbnd = [i + j for i, j in zip(id2, name)]
+        indvSystems = set(cmbnd)
+
 
 # Function to map the colors as a list from the input list of x variables
 def pltcolor(lst):
@@ -121,8 +133,9 @@ def pltcolor(lst):
 
     return cols
 
+
 def plot_nwpac():
-    ax.set_extent([98.0, 180.0, -0.5, 40.0])
+    create_map([98.0, 180.0, -0.5, 40.0])
     
     # Draw PAR line
     x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
@@ -130,71 +143,76 @@ def plot_nwpac():
     plt.plot(x_values, y_values, lw=0.8, zorder=1, color='red', ls='--')
     plt.text(125.0, 4.0, 'PHL Area of Responsibility', fontsize=8, color='red')
     
-    read_atcf_file('data/trackfile-16W.txt')
+    read_atcf_file('data/Nov2020-NWP-TC-Tracks.txt')
 
     # Create the colors list using the function above
     cols = pltcolor(wnd)
 
-    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=2)
+    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=3)
 
     # Connect points with same TC id only
     uid = np.array(id)
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=1)
+            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=2)
+   
+    # place a text box in upper  in right axes coords
+    ax.text(1, 1, 'In plot:\n' + '\n'.join(sorted(indvSystems)), transform=ax.transAxes, fontsize=8, verticalalignment='top')
     
-    #plt.text(144.4, 11.2, ' GONI', fontsize=8)
+    plt.title('October-November 2020 Northwest Pacific Tropical Cyclone Tracks (Until 11-10 06Z)')
 
-    #plt.text(153.0, 5.0, ' ATSANI', fontsize=8)
-    plt.title('Northwest Pacific Tropical Cyclone Tracks')
-    
-    pass
+
 
 def plot_nwpac_par():
-    ax.set_extent([114.0, 136.0, 4.0, 26.0])
+    create_map([114.0, 136.0, 4.0, 26.0])
     
     # Draw PAR line
     x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
     y_values = [25.0, 25.0, 5.0, 5.0, 15.0, 21.0, 25.0]
     plt.plot(x_values, y_values, lw=0.8, zorder=1, color='red', ls='--')
     plt.text(125.0, 4.5, 'Philippine Area of Responsibility', fontsize=8, color='red')
-	
-    read_atcf_file('data/trackfile-16W.txt')
+    
+    read_atcf_file('data/Oct2020-NWP-TC-Tracks.txt')
     
     # Create the colors list using the function above
     cols = pltcolor(wnd)
 
-    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=2)
+    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=3)
 
     # Connect points with same TC id only
     uid = np.array(id)
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=1)
+            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=2)
     
-    plt.title('Tropical Cyclone Tracks within the Philippine Area of Responsibility')
+    plt.title('Tropical Cyclone Tracks Centered over the Philippine Area of Responsibility')
+
 
 def plot_nio():
-    ax.set_extent([38.0, 102.0, -0.5, 32.0])
+    create_map([38.0, 102.0, -0.5, 32.0])
     
     read_atcf_file('data/2020-NIO-TC-Tracks.txt')
 
     # Create the colors list using the function above
     cols = pltcolor(wnd)
 
-    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=2)
+    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=markersize, transform=ccrs.PlateCarree(), zorder=3)
 
     # Connect points with same TC id only
     uid = np.array(id)
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=1)
+            plt.plot(np.array(lat)[idx], np.array(lon)[idx], lw=0.5, antialiased=True, color='black', zorder=2)
+    
+    # place a text box in upper  in right axes coords
+    ax.text(1, 1, 'In plot:\n' + '\n'.join(sorted(indvSystems)), transform=ax.transAxes, fontsize=8, verticalalignment='top')
     
     plt.title('North Indian Ocean Tropical Cyclone Tracks')
-	
+
+ 
 def plot_single():
     read_atcf_file('data/22W-Goni.txt')
     
@@ -203,22 +221,21 @@ def plot_single():
     minlon = min(lon)-5
     maxlon = max(lon)+5
     
-    ax.set_extent([minlat, maxlat, minlon, maxlon])
+    create_map([minlat, maxlat, minlon, maxlon])
     
     # Create the colors list using the function above
     cols = pltcolor(wnd)
 
-    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=40, transform=ccrs.PlateCarree(), zorder=2)
-    plt.plot(lat, lon, lw=0.8, antialiased=True, color='black', zorder=1)
+    plt.scatter(lat, lon, c=cols, edgecolors=ptoutl, s=40, transform=ccrs.PlateCarree(), zorder=3)
+    plt.plot(lat, lon, lw=0.8, antialiased=True, color='black', zorder=2)
     
     #lablat = [2+f for f in lat]
-    texts = []
     
     for i, txt in enumerate(wnd):
         ax.annotate(str(txt), (lat[i], lon[i]), xytext=(5,5), textcoords='offset points', fontsize=8)
         #texts.append(ax.text(lablat[i], lon[i], txt))
     
-    plt.title(str(id[0]) + ' ' + name[0] + ' Observed Track and Intensity (1-minute Sustained Winds in Knots)\n'
+    plt.title(str(indvSystems) + ' Observed Track and Intensity (1-minute Sustained Winds in Knots)\n'
     + date[-1] +' ' + time[-1] + ' - ' + date[0] + ' ' + time[0] + ' UTC')
 
 
@@ -247,7 +264,7 @@ c4 = mlines.Line2D([], [], color=ty4col, markeredgecolor=ptoutl, marker=marker, 
 c5 = mlines.Line2D([], [], color=ty5col, markeredgecolor=ptoutl, marker=marker, linestyle='None',
                           markersize=10, label='Category 5')
                           
-plt.legend(handles=[lpa, td, ts, classif, c1, c2, c3, c4, c5], facecolor='burlywood', loc='upper left', prop=fontP)
+plt.legend(handles=[lpa, td, ts, classif, c1, c2, c3, c4, c5], facecolor='antiquewhite', loc='upper left', prop=fontP)
 
 plt.autoscale(False)
 
@@ -256,4 +273,4 @@ plt.figtext(0.99, 0.01, 'Track and intensity data from JTWC | Plotted by Imran M
 #plt.tight_layout(rect=[2, 0.05, 0, 0])
 #plt.tight_layout()
 plt.show()
-#fig.savefig('myimage.png', format='png', dpi=1200)
+#fig.savefig('myimage.png', format='png', bbox_inches='tight', pad_inches=0)
