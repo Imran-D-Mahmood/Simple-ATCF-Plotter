@@ -57,15 +57,15 @@ def create_map(coordlist):
     if mapstyle == 'Y' or mapstyle == 'y':
         stamen_terrain = cimgt.Stamen('terrain-background')
         ax = plt.axes(projection=stamen_terrain.crs)
-        ax.add_image(stamen_terrain, 6) #zoom level
-        ax.coastlines('10m')
+        ax.add_image(stamen_terrain, 7) #zoom level
     else:
         ax = plt.axes(projection=ccrs.PlateCarree())
         land = cfeature.NaturalEarthFeature('physical', 'land', \
             scale=resol, edgecolor='darkgreen', facecolor=cfeature.COLORS['land'])
-        ax.add_feature(land, facecolor='olivedrab', lw=0.5, zorder=1, alpha=0.8)
+        ax.add_feature(land, facecolor='olivedrab', edgecolor='darkgreen', zorder=1, alpha=0.8)
     
     ax.set_extent(coordlist, crs=ccrs.Geodetic())
+    ax.autoscale(False)
 
     ocean = cfeature.NaturalEarthFeature('physical', 'ocean', \
         scale=resol, edgecolor='none', facecolor='powderblue')
@@ -75,10 +75,10 @@ def create_map(coordlist):
         scale=resol, edgecolor=cfeature.COLORS['water'], facecolor='none')
     
     ax.add_feature(ocean)
-    ax.autoscale(False)
     ax.add_feature(lakes)
     ax.add_feature(rivers, lw=0.5)
     ax.add_feature(cfeature.BORDERS, color='darkgreen', lw=0.8)
+    ax.add_feature(cfeature.COASTLINE, color='darkgreen', lw=0.5)
 
     gl = ax.gridlines(draw_labels=True, lw=1, color='gray', alpha=0.5, linestyle=':')
     gl.top_labels = False
@@ -181,7 +181,7 @@ def plot_nwpac():
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lon)[idx], np.array(lat2)[idx], lw=0.5, antialiased=True, transform=ccrs.Geodetic(), color='black', zorder=2)
+            plt.plot(np.array(lon)[idx], np.array(lat2)[idx], lw=0.5, antialiased=True, transform=ccrs.PlateCarree(), color='black', zorder=2)
    
     # place a text box in upper  in right axes coords
     ax.text(1, 1, 'In plot:\n' + '\n'.join(sorted(indvSystems)), transform=ax.transAxes, fontsize=8, verticalalignment='top')
@@ -196,10 +196,10 @@ def plot_nwpac_par():
     # Draw PAR line
     x_values = [120.0, 135.0, 135.0, 115.0, 115.0, 120.0, 120.0]
     y_values = [25.0, 25.0, 5.0, 5.0, 15.0, 21.0, 25.0]
-    plt.plot(x_values, y_values, lw=0.8, zorder=1, color='red', ls='--', transform=ccrs.PlateCarree())
+    plt.plot(x_values, y_values, lw=0.8, zorder=2, color='red', ls='--', transform=ccrs.PlateCarree())
     plt.text(125.0, 4.5, 'Philippine Area of Responsibility', fontsize=8, color='red', transform=ccrs.PlateCarree())
     
-    read_atcf_file('data/2020-NWP.txt')
+    read_atcf_file('data/2021-NWP.txt')
     
     # Create the colors list using the function above
     cols = pltcolor(wnd)
@@ -211,15 +211,15 @@ def plot_nwpac_par():
     for yv in uid:
         if yv != np.nan:
             idx = uid == yv
-            plt.plot(np.array(lon)[idx], np.array(lat2)[idx], lw=0.5, antialiased=True, color='black', zorder=2)
+            plt.plot(np.array(lon)[idx], np.array(lat2)[idx], lw=0.5, antialiased=True, color='black', transform=ccrs.PlateCarree(), zorder=2)
     
-    plt.title('Tropical Cyclone Tracks Centered over the Philippine Area of Responsibility')
+    plt.title('2021 Northwest Pacific Tropical Cyclone Tracks (Philippine Area of Responsibility)')
 
 
 def plot_nio():
     create_map([38.0, 102.0, -0.5, 32.0])
     
-    read_atcf_file('data/2020-NIO.txt')
+    read_atcf_file('data/1998vsTauktae.txt')
 
     # Create the colors list using the function above
     cols = pltcolor(wnd)
@@ -236,7 +236,7 @@ def plot_nio():
     # place a text box in upper  in right axes coords
     ax.text(1, 1, 'In plot:\n' + '\n'.join(sorted(indvSystems)), transform=ax.transAxes, fontsize=8, verticalalignment='top')
     
-    plt.title('North Indian Ocean Tropical Cyclone Tracks')
+    plt.title('Observed Tracks of Cyclone 03A (1998) and Cyclone Tauktae (2021)')
 
  
 def plot_single():
